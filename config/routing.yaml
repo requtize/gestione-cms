@@ -1,0 +1,3 @@
+# gestione:
+#     resource: '@CmsModule/Resources/config/routing.yaml'
+#     prefix: '%admin%'

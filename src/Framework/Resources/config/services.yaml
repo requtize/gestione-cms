@@ -1,0 +1,152 @@
+services:
+    kernel:
+        public: true
+        class: Gestione\Component\HttpKernel\Kernel
+
+    http_kernel:
+        public: true
+        class: Symfony\Component\HttpKernel\HttpKernel
+        arguments:
+            - '@event_dispatcher'
+            - '@controller_resolver'
+
+    event_dispatcher:
+        public: true
+        class: Symfony\Component\EventDispatcher\EventDispatcher
+
+    controller_resolver:
+        public: true
+        class: Symfony\Component\HttpKernel\Controller\ControllerResolver
+
+    router:
+        public: true
+        class: Symfony\Component\Routing\Router
+        arguments:
+            - '@routing.loader.modules'
+            - '@modules_collection'
+
+    locales:
+        public: true
+        class: Gestione\Component\I18n\Locales
+
+    locale:
+        public: true
+        class: Gestione\Component\I18n\Locale
+        arguments:
+            - '@locales'
+            - '@request'
+        factory: [ Gestione\Component\I18n\LocaleFromRequestFactory, createLocale ]
+
+    locale.request.resolver:
+        class: Gestione\Component\I18n\Request\LocaleResolver
+        arguments: [ '@locales', '@locale.guesser' ]
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 5000 }
+
+    locale.guesser:
+        class: Gestione\Component\I18n\Request\LocaleGuesser
+        arguments: [ '@locales' ]
+
+    routing.loader.modules:
+        class: Gestione\Framework\Routing\Loader\ModulesLoader
+        arguments:
+            - '@locales'
+            - '@request'
+        tags: [ routing.loader ]
+
+    routing.resolver:
+        class: Symfony\Component\Config\Loader\LoaderResolver
+        tags: [ routing.resolver ]
+
+    routing.matcher.static:
+        class: Gestione\Framework\Routing\Matcher\StaticRoutingMatcher
+        arguments:
+            - '@router'
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 1000 }
+
+    modules_collection:
+        synthetic: true
+        class: Gestione\Component\HttpKernel\Module\ModulesCollection
+
+    request:
+        public: true
+        synthetic: true
+        class: Gestione\Component\HttpKernel\Request
+
+    request_stack:
+        public: true
+        class: Symfony\Component\HttpFoundation\RequestStack
+
+    argument_resolver:
+        class: Symfony\Component\HttpKernel\Controller\ArgumentResolver
+        arguments:
+            - null
+            - []
+
+    controller.argument_value_resolver:
+        class: Symfony\Component\HttpKernel\Controller\ArgumentResolver
+
+    container_controller_resolver:
+        class: Gestione\Framework\Controller\ContainerControllerResolver
+        arguments:
+            - '@service_container'
+        tags:
+            - { name: kernel.event_listener, event: kernel.controller, method: onKernelController }
+
+    database:
+        public: true
+        class: Gestione\Component\DBAL\Database
+        factory: [ 'Gestione\Component\DBAL\DatabaseFactory', createDatabase ]
+        arguments:
+            - '@doctrine.event_manager'
+
+    doctrine.event_manager:
+        public: true
+        class: Doctrine\Common\EventManager
+
+    doctrine.orm:
+        public: true
+        class: Doctrine\ORM\EntityManager
+        factory: [ 'Gestione\Component\Orm\OrmFactory', createOrm ]
+        arguments:
+            - '%kernel.environment%'
+            - '@modules_collection'
+            - '@database'
+
+    doctrine.table_prefix_registrator:
+        class: Gestione\Component\Orm\TablePrefixRegistrator
+        arguments:
+            - '%env(GESTIONE_DB_PREFIX)%'
+        tags:
+            - { name: doctrine.event_listener, event: loadClassMetadata }
+
+    slugger:
+        public: true
+        class: Gestione\Component\Stdlib\Slugger
+
+    templating:
+        public: true
+        class: Gestione\Component\Templating\Engine
+        arguments: [ '@twig' ]
+
+    templating.listener.response_view_renderer:
+        class: Gestione\Component\Templating\EventListener\ResponseViewRenderer
+        arguments: 
+            - '@templating'
+        tags:
+            - { name: kernel.event_listener, event: kernel.view, method: onKernelView }
+
+    twig:
+        public: true
+        class: Twig\Environment
+        arguments:
+            - '%kernel.cache_dir%'
+            - '%kernel.debug%'
+            - '@hooker'
+        factory: [ 'Gestione\Component\Templating\Twig\EnvironmentFactory', createTwig ]
+
+    hooker:
+        public: true
+        class: Gestione\Component\Hooking\Hooker
+        arguments: [ '@event_dispatcher' ]

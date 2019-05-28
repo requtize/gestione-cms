@@ -1,0 +1,17 @@
+### <gestione:core>
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule ^/?assets(.*)? public/asset.php?filepath=assets$1 [L,END]
+    RewriteRule ^/?uploads(.*)? public/asset.php?filepath=uploads$1 [L,END]
+    RewriteRule ^/?extensions(.*)? public/asset.php?filepath=extensions$1 [L,END]
+    RewriteRule ^/?public public/asset.php?action=direct-access [L,END]
+
+    RewriteCond %{REQUEST_URI} !public/
+    RewriteRule ^(.*)$ public/index.php [NC,L,QSA,END]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    deny from all
+</IfModule>
+### </gestione:core>

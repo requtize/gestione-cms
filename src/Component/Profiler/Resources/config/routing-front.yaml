@@ -1,0 +1,5 @@
+_profiler_token:
+    path: /_profiler/{token}
+    controller: Gestione\Component\Profiler\Http\Controller\ProfilerController::homepage
+    requirements:
+        token: '[a-zA-Z0-9]{6}'

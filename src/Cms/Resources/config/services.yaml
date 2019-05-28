@@ -1,0 +1,71 @@
+services:
+    page.manager:
+        public: true
+        class: Gestione\Cms\Content\Page\PageManager
+        arguments:
+            - '@page.query_producer'
+
+    page.query_producer:
+        class: Gestione\Cms\Content\Page\Query\QueryProducer
+        arguments:
+            - '@database'
+            - '@request'
+
+    cms.routing.matcher:
+        class: Gestione\Cms\Routing\Matcher
+        arguments: [ '@locales' ]
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 2000 }
+
+    cms.not_found_http_exception_handler:
+        class: Gestione\Cms\NotFoundHttpExceptionHandler
+        arguments:
+            - '@http_kernel'
+        tags:
+            - { name: kernel.event_listener, event: kernel.exception, method: onKernelException, priority: -1000 }
+
+    cms.page.routing.slug_matcher:
+        class: Gestione\Cms\Content\Page\Routing\SlugMatcher
+        arguments:
+            - '@page.manager'
+        tags: [ page.slug_matcher ]
+
+    page.setup:
+        public: true
+        class: Gestione\Cms\Content\Page\Setup\Setup
+
+    page.setupper.metadata:
+        class: Gestione\Cms\Content\Page\Setup\SetupMetadata
+        arguments:
+            - '@page.metadata.syncer.database_storage_syncer'
+        tags: [ 'page.setupper' ]
+
+    page.metadata.syncer.database_storage_syncer:
+        class: Gestione\Cms\Content\Metadata\Syncer\DatabaseStorageSyncer
+        arguments:
+            - '@page.metadata.storage'
+            - '@metadata.registry'
+
+    page.metadata.registrator:
+        class: Gestione\Cms\Content\Page\Metadata\Registrator
+        tags: [ 'metadata.registrator' ]
+
+    page.metadata.storage:
+        public: true
+        class: Gestione\Cms\Content\Page\Metadata\Storage
+        arguments:
+            - '@database'
+            - '@locale'
+            - '@hooker'
+
+    taxonomy.setup:
+        public: true
+        class: Gestione\Cms\Content\Taxonomy\Setup\Setup
+
+    metadata.registry:
+        public: true
+        class: Gestione\Cms\Content\Metadata\Registrator\Registry
+
+    _cms.templating.twig.configuration:
+        class: Gestione\Cms\Templating\TwigConfigurationSubscriber
+        tags: [ hooks.subscriber ]
